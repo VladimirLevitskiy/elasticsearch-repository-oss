@@ -29,7 +29,6 @@ import com.aliyun.oss.model.PutObjectResult;
 import com.aliyun.oss.model.UploadPartRequest;
 import com.aliyun.oss.model.UploadPartResult;
 import okhttp3.Response;
-import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.aliyun.oss.blobstore.OssBlobContainer;
@@ -65,7 +64,8 @@ public class OssStorageClient {
 
     public OssStorageClient(RepositoryMetadata metadata) throws CreateStsOssClientException {
         this.metadata = metadata;
-        if (StringUtils.isNotEmpty(OssClientSettings.ECS_RAM_ROLE.get(metadata.settings()).toString())) {
+        SecureString secureString = OssClientSettings.ECS_RAM_ROLE.get(metadata.settings());
+        if (secureString != null && !secureString.toString().isEmpty()) {
             isStsOssClient = true;
         } else {
             isStsOssClient = false;
@@ -257,15 +257,15 @@ public class OssStorageClient {
     private OSSClient createClient(RepositoryMetadata repositoryMetaData) throws CreateStsOssClientException {
         OSSClient client;
 
-        String ecsRamRole = OssClientSettings.ECS_RAM_ROLE.get(repositoryMetaData.settings()).toString();
-        String stsToken = OssClientSettings.SECURITY_TOKEN.get(repositoryMetaData.settings()).toString();
+        SecureString ecsRamRole = OssClientSettings.ECS_RAM_ROLE.get(repositoryMetaData.settings());
+        SecureString stsToken = OssClientSettings.SECURITY_TOKEN.get(repositoryMetaData.settings());
         /*
          * If ecsRamRole exist
          * means use ECS metadata service to get ststoken for auto snapshot.
          * */
-        if (StringUtils.isNotEmpty(ecsRamRole.toString())) {
+        if (ecsRamRole != null && !ecsRamRole.toString().isEmpty()) {
             client = createStsOssClient(repositoryMetaData);
-        } else if (StringUtils.isNotEmpty(stsToken)) {
+        } else if (stsToken != null && !stsToken.toString().isEmpty()) {
             //no used still now.
             client = createAKStsTokenClient(repositoryMetaData);
         } else {

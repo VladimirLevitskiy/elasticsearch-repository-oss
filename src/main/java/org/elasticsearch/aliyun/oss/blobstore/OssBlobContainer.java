@@ -6,18 +6,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.NoSuchFileException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSException;
-import com.aliyun.oss.model.PartETag;
-import org.apache.commons.lang.StringUtils;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.lucene.util.SetOnce;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobMetadata;
 import org.elasticsearch.common.blobstore.BlobPath;
@@ -26,7 +24,6 @@ import org.elasticsearch.common.blobstore.DeleteResult;
 import org.elasticsearch.common.blobstore.support.AbstractBlobContainer;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.core.CheckedConsumer;
-import org.elasticsearch.repositories.blobstore.ChunkedBlobOutputStream;
 
 /**
  * A class for managing a oss repository of blob entries, where each blob entry is just a named group of bytes
@@ -122,7 +119,7 @@ public class OssBlobContainer extends AbstractBlobContainer {
                 throw new FileAlreadyExistsException(
                         "blob [" + blobName + "] already exists, cannot overwrite");
             } else {
-                deleteBlobsIgnoringIfNotExists(List.of(blobName).listIterator());
+                deleteBlobsIgnoringIfNotExists(Collections.singletonList(blobName).listIterator());
             }
         }
         blobStore.writeBlob(buildKey(blobName), inputStream, blobSize);
@@ -196,7 +193,7 @@ public class OssBlobContainer extends AbstractBlobContainer {
     @Override
     public Map<String, BlobContainer> children() throws IOException {
         logger.trace("children()");
-        return blobStore.children(path(),keyPath);
+        return blobStore.children(path(), keyPath);
     }
 
     /**
@@ -219,6 +216,6 @@ public class OssBlobContainer extends AbstractBlobContainer {
     }
 
     protected String buildKey(String blobName) {
-        return keyPath + (blobName == null ? StringUtils.EMPTY : blobName);
+        return keyPath + (blobName == null ? "" : blobName);
     }
 }

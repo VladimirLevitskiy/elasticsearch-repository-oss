@@ -27,7 +27,6 @@ import com.aliyun.oss.model.ObjectMetadata;
 import com.aliyun.oss.model.PartETag;
 import com.aliyun.oss.model.UploadPartRequest;
 import com.aliyun.oss.model.UploadPartResult;
-import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.SetOnce;
@@ -130,7 +129,7 @@ public class OssBlobStore implements BlobStore {
      */
     Map<String, BlobMetadata> listBlobsByPrefix(String keyPath, String prefix) throws IOException {
         MapBuilder<String, BlobMetadata> blobsBuilder = MapBuilder.newMapBuilder();
-        String actualPrefix = keyPath + (prefix == null ? StringUtils.EMPTY : prefix);
+        String actualPrefix = keyPath + (prefix == null ? "" : prefix);
         String nextMarker = null;
         ObjectListing blobs;
         do {

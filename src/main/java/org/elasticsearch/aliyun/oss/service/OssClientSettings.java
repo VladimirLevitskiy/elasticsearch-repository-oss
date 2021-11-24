@@ -1,6 +1,5 @@
 package org.elasticsearch.aliyun.oss.service;
 
-import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.unit.ByteSizeUnit;
@@ -19,35 +18,37 @@ public class OssClientSettings {
     private static final ByteSizeValue MIN_CHUNK_SIZE = new ByteSizeValue(1, ByteSizeUnit.MB);
     private static final ByteSizeValue MAX_CHUNK_SIZE = new ByteSizeValue(1, ByteSizeUnit.GB);
 
+    private static final String EMPTY_STRING = "";
+
     public static final Setting<SecureString> ACCESS_KEY_ID =
-        new Setting<>("access_key_id", StringUtils.EMPTY, SecureString::new, Property.Filtered,
-            Property.Dynamic, Property.NodeScope);
+            new Setting<>("access_key_id", EMPTY_STRING, (someString) -> new SecureString(someString.toCharArray()), Property.Filtered,
+                    Property.Dynamic, Property.NodeScope);
     public static final Setting<SecureString> SECRET_ACCESS_KEY =
-        new Setting<>("secret_access_key", StringUtils.EMPTY, SecureString::new, Property.Filtered,
-            Property.Dynamic, Property.NodeScope);
+            new Setting<>("secret_access_key", EMPTY_STRING, (someString) -> new SecureString(someString.toCharArray()), Property.Filtered,
+                    Property.Dynamic, Property.NodeScope);
     public static final Setting<String> ENDPOINT =
-        Setting.simpleString("endpoint", Setting.Property.NodeScope, Setting.Property.Dynamic);
+            Setting.simpleString("endpoint", Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<SecureString> SECURITY_TOKEN =
-        new Setting<>("security_token", StringUtils.EMPTY, SecureString::new, Property.Filtered,
-            Property.Dynamic, Property.NodeScope);
+            new Setting<>("security_token", EMPTY_STRING, (someString) -> new SecureString(someString.toCharArray()), Property.Filtered,
+                    Property.Dynamic, Property.NodeScope);
     public static final Setting<String> BUCKET =
-        simpleString("bucket", Setting.Property.NodeScope, Setting.Property.Dynamic);
+            simpleString("bucket", Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<String> BASE_PATH = simpleString("base_path", Setting.Property.NodeScope,
-        Setting.Property.Dynamic);
+            Setting.Property.Dynamic);
     public static final Setting<Boolean> COMPRESS =
-        boolSetting("compress", false, Setting.Property.NodeScope, Setting.Property.Dynamic);
+            boolSetting("compress", false, Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<ByteSizeValue> CHUNK_SIZE =
-        byteSizeSetting("chunk_size", MAX_CHUNK_SIZE, MIN_CHUNK_SIZE, MAX_CHUNK_SIZE,
-            Setting.Property.NodeScope, Setting.Property.Dynamic);
+            byteSizeSetting("chunk_size", MAX_CHUNK_SIZE, MIN_CHUNK_SIZE, MAX_CHUNK_SIZE,
+                    Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<ByteSizeValue> BUFFER_SIZE =
             byteSizeSetting("buffer_size", MAX_CHUNK_SIZE, MIN_CHUNK_SIZE, MAX_CHUNK_SIZE,
                     Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<SecureString> ECS_RAM_ROLE =
-        new Setting<>("ecs_ram_role", StringUtils.EMPTY, SecureString::new, Property.Filtered,
-            Property.Dynamic, Property.NodeScope);
+            new Setting<>("ecs_ram_role", EMPTY_STRING, (someString) -> new SecureString(someString.toCharArray()), Property.Filtered,
+                    Property.Dynamic, Property.NodeScope);
     public static final Setting<SecureString> AUTO_SNAPSHOT_BUCKET =
-        new Setting<>("auto_snapshot_bucket", StringUtils.EMPTY, SecureString::new, Property.Filtered,
-            Property.Dynamic, Property.NodeScope);
+            new Setting<>("auto_snapshot_bucket", EMPTY_STRING, (someString) -> new SecureString(someString.toCharArray()), Property.Filtered,
+                    Property.Dynamic, Property.NodeScope);
     public static final Setting<Boolean> SUPPORT_CNAME =
-        boolSetting("support_cname", true, Setting.Property.NodeScope, Setting.Property.Dynamic);
+            boolSetting("support_cname", true, Setting.Property.NodeScope, Setting.Property.Dynamic);
 }

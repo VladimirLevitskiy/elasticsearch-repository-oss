@@ -2,7 +2,6 @@ package org.elasticsearch.repository.oss;
 
 import java.io.File;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.aliyun.oss.blobstore.OssBlobContainer;
@@ -14,6 +13,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
+import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.BigArrays;
@@ -47,8 +47,8 @@ public class OssRepository extends BlobStoreRepository {
         super(metadata, getSetting(OssClientSettings.COMPRESS, metadata), namedXContentRegistry, clusterService, bigArrays, recoverySettings);
         this.env = env;
         this.ossService = ossService;
-        String ecsRamRole = OssClientSettings.ECS_RAM_ROLE.get(metadata.settings()).toString();
-        if (StringUtils.isNotEmpty(ecsRamRole)) {
+        SecureString ecsRamRole = OssClientSettings.ECS_RAM_ROLE.get(metadata.settings());
+        if (ecsRamRole != null && !ecsRamRole.toString().isEmpty()) {
             this.bucket = getSetting(OssClientSettings.AUTO_SNAPSHOT_BUCKET, metadata).toString();
         } else {
             this.bucket = getSetting(OssClientSettings.BUCKET, metadata);
