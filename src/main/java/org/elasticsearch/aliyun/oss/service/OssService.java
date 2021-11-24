@@ -5,15 +5,22 @@ import java.io.InputStream;
 
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSException;
+import com.aliyun.oss.model.AbortMultipartUploadRequest;
 import com.aliyun.oss.model.Bucket;
+import com.aliyun.oss.model.CompleteMultipartUploadRequest;
+import com.aliyun.oss.model.CompleteMultipartUploadResult;
 import com.aliyun.oss.model.CopyObjectResult;
 import com.aliyun.oss.model.DeleteObjectsRequest;
 import com.aliyun.oss.model.DeleteObjectsResult;
+import com.aliyun.oss.model.InitiateMultipartUploadRequest;
+import com.aliyun.oss.model.InitiateMultipartUploadResult;
 import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectListing;
 import com.aliyun.oss.model.ObjectMetadata;
 import com.aliyun.oss.model.PutObjectResult;
+import com.aliyun.oss.model.UploadPartRequest;
+import com.aliyun.oss.model.UploadPartResult;
 import org.elasticsearch.aliyun.oss.service.exception.CreateStsOssClientException;
 
 /**
@@ -122,4 +129,12 @@ public interface OssService {
      * judge if use Sts OssClient
      */
     boolean isUseStsOssClient();
+
+    InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest initiateMultiPartUpload);
+
+    UploadPartResult uploadPart(UploadPartRequest uploadRequest);
+
+    boolean abortMultipartUpload(AbortMultipartUploadRequest abortRequest);
+
+    CompleteMultipartUploadResult completeMultipartUpload(CompleteMultipartUploadRequest completeRequest);
 }

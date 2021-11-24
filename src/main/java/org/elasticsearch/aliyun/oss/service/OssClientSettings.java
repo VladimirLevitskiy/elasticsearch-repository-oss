@@ -39,6 +39,9 @@ public class OssClientSettings {
     public static final Setting<ByteSizeValue> CHUNK_SIZE =
         byteSizeSetting("chunk_size", MAX_CHUNK_SIZE, MIN_CHUNK_SIZE, MAX_CHUNK_SIZE,
             Setting.Property.NodeScope, Setting.Property.Dynamic);
+    public static final Setting<ByteSizeValue> BUFFER_SIZE =
+            byteSizeSetting("buffer_size", MAX_CHUNK_SIZE, MIN_CHUNK_SIZE, MAX_CHUNK_SIZE,
+                    Setting.Property.NodeScope, Setting.Property.Dynamic);
     public static final Setting<SecureString> ECS_RAM_ROLE =
         new Setting<>("ecs_ram_role", StringUtils.EMPTY, SecureString::new, Property.Filtered,
             Property.Dynamic, Property.NodeScope);
