@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.NoSuchFileException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -49,12 +48,15 @@ public class OssBlobContainer extends AbstractBlobContainer {
     @Override
     public boolean blobExists(String blobName) {
         logger.trace("blobExists({})", blobName);
+        boolean result = false;
         try {
-            return blobStore.blobExists(buildKey(blobName));
+            result = blobStore.blobExists(buildKey(blobName));
         } catch (OSSException | ClientException | IOException e) {
             logger.warn("can not access [{}] : {}", blobName, e.getMessage());
             throw new BlobStoreException("Failed to check if blob [" + blobName + "] exists", e);
         }
+        logger.trace("blobExists({}) result={}", blobName, result);
+        return result;
     }
 
     /**
@@ -95,6 +97,7 @@ public class OssBlobContainer extends AbstractBlobContainer {
 
     @Override
     public long readBlobPreferredLength() {
+        logger.trace("readBlobPreferredLength()");
         return super.readBlobPreferredLength();
     }
 
@@ -135,6 +138,7 @@ public class OssBlobContainer extends AbstractBlobContainer {
 
     @Override
     public void writeBlobAtomic(String blobName, BytesReference bytes, boolean failIfAlreadyExists) throws IOException {
+        logger.trace("writeBlobAtomic({}, {}, {})", blobName, bytes, failIfAlreadyExists);
         writeBlob(blobName, bytes, failIfAlreadyExists);
     }
 
@@ -163,14 +167,20 @@ public class OssBlobContainer extends AbstractBlobContainer {
     @Override
     public DeleteResult delete() throws IOException {
         logger.trace("delete()");
-        return blobStore.delete(keyPath, this);
+        DeleteResult result = blobStore.delete(keyPath, this);
+        logger.trace("delete() blobsDeleted={} bytesDeleted={}",
+                result == null ? "null" : result.blobsDeleted(),
+                result == null ? "null" : result.bytesDeleted());
+        return result;
     }
 
     @Override
     public void deleteBlobsIgnoringIfNotExists(Iterator<String> blobNames) throws IOException {
+        logger.trace("deleteBlobsIgnoringIfNotExists(iterator)");
         for (Iterator<String> it = blobNames; it.hasNext(); ) {
             String blobName = it.next();
             try {
+                logger.trace("deleteBlobsIgnoringIfNotExists(current={})", blobName);
                 deleteBlob(blobName);
             } catch (IOException ex) {
                 logger.warn(ex);
@@ -187,13 +197,18 @@ public class OssBlobContainer extends AbstractBlobContainer {
      */
     @Override
     public Map<String, BlobMetadata> listBlobs() throws IOException {
-        return listBlobsByPrefix(null);
+        logger.trace("listBlobs()");
+        Map<String, BlobMetadata> result = listBlobsByPrefix(null);
+        logger.trace("listBlobs() result={}", result == null ? "null" : result.keySet());
+        return result;
     }
 
     @Override
     public Map<String, BlobContainer> children() throws IOException {
         logger.trace("children()");
-        return blobStore.children(path(), keyPath);
+        Map<String, BlobContainer> result = blobStore.children(path(), keyPath);
+        logger.trace("children() result={}", result == null ? "null" : result.keySet());
+        return result;
     }
 
     /**
@@ -207,12 +222,15 @@ public class OssBlobContainer extends AbstractBlobContainer {
     public Map<String, BlobMetadata> listBlobsByPrefix(String blobNamePrefix)
             throws IOException {
         logger.trace("listBlobsByPrefix({})", blobNamePrefix);
+        Map<String, BlobMetadata> result = null;
         try {
-            return blobStore.listBlobsByPrefix(keyPath, blobNamePrefix);
+            result = blobStore.listBlobsByPrefix(keyPath, blobNamePrefix);
         } catch (IOException e) {
             logger.warn("can not access [{}] : {}", blobNamePrefix, e.getMessage());
             throw new IOException(e);
         }
+        logger.trace("listBlobsByPrefix({} result={}", blobNamePrefix, result == null ? "null" : result.keySet());
+        return result;
     }
 
     protected String buildKey(String blobName) {
