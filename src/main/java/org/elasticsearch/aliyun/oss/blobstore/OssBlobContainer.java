@@ -132,8 +132,7 @@ public class OssBlobContainer extends AbstractBlobContainer {
     public void writeBlob(String blobName, boolean failIfAlreadyExists, boolean atomic, CheckedConsumer<OutputStream, IOException> writer)
             throws IOException {
         logger.trace("writeBlob({},{},{},{})", blobName, failIfAlreadyExists, atomic, writer);
-        final String absoluteBlobKey = buildKey(blobName);
-        blobStore.writeBlob(absoluteBlobKey, failIfAlreadyExists, atomic, writer, this);
+        blobStore.writeBlob(blobName, failIfAlreadyExists, atomic, writer, this, buildKey(blobName));
     }
 
     @Override

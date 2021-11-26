@@ -246,7 +246,7 @@ public class OssBlobStore implements BlobStore {
         return bufferSize.getBytes();
     }
 
-    public void writeBlob(String blobName, boolean failIfAlreadyExists, boolean atomic, CheckedConsumer<OutputStream, IOException> writer, OssBlobContainer ossBlobContainer) throws IOException {
+    public void writeBlob(String blobName, boolean failIfAlreadyExists, boolean atomic, CheckedConsumer<OutputStream, IOException> writer, OssBlobContainer container, String blobKey) throws IOException {
         try (
                 ChunkedBlobOutputStream<PartETag> out = new ChunkedBlobOutputStream<PartETag>(bigArrays, bufferSizeInBytes()) {
 
@@ -264,11 +264,11 @@ public class OssBlobStore implements BlobStore {
                         if (flushedBytes == 0L) {
                             assert lastPart == false : "use single part upload if there's only a single part";
                             uploadId.set(doPrivilegedAndRefreshClient(() ->
-                                    client.initiateMultipartUpload(initiateMultiPartUpload(blobName))
+                                    client.initiateMultipartUpload(initiateMultiPartUpload(blobKey))
                                             .getUploadId())
                             );
                             if (Strings.isEmpty(uploadId.get())) {
-                                throw new IOException("Failed to initialize multipart upload " + blobName);
+                                throw new IOException("Failed to initialize multipart upload " + blobKey);
                             }
                         }
                         assert lastPart == false || successful : "must only write last part if successful";
@@ -276,7 +276,7 @@ public class OssBlobStore implements BlobStore {
                                 buffer.bytes().streamInput(),
                                 uploadId.get(),
                                 parts.size() + 1,
-                                blobName,
+                                blobKey,
                                 buffer.size()
                         );
                         final UploadPartResult uploadResponse =
@@ -287,12 +287,12 @@ public class OssBlobStore implements BlobStore {
                     @Override
                     protected void onCompletion() throws IOException {
                         if (flushedBytes == 0L) {
-                            ossBlobContainer.writeBlob(blobName, buffer.bytes(), failIfAlreadyExists);
+                            container.writeBlob(blobName, buffer.bytes(), failIfAlreadyExists);
                         } else {
                             flushBuffer(true);
                             final CompleteMultipartUploadRequest completeRequest = new CompleteMultipartUploadRequest(
                                     bucket,
-                                    blobName,
+                                    blobKey,
                                     uploadId.get(),
                                     parts
                             );
@@ -303,7 +303,7 @@ public class OssBlobStore implements BlobStore {
                     @Override
                     protected void onFailure() {
                         if (Strings.hasText(uploadId.get())) {
-                            abortMultiPartUpload(uploadId.get(), blobName);
+                            abortMultiPartUpload(uploadId.get(), blobKey);
                         }
                     }
                 }
