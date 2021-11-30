@@ -13,21 +13,27 @@ import com.aliyun.oss.ClientConfiguration;
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.OSSException;
+import com.aliyun.oss.model.AbortMultipartUploadRequest;
+import com.aliyun.oss.model.CompleteMultipartUploadRequest;
+import com.aliyun.oss.model.CompleteMultipartUploadResult;
 import com.aliyun.oss.model.CopyObjectResult;
 import com.aliyun.oss.model.DeleteObjectsRequest;
 import com.aliyun.oss.model.DeleteObjectsResult;
+import com.aliyun.oss.model.InitiateMultipartUploadRequest;
+import com.aliyun.oss.model.InitiateMultipartUploadResult;
 import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectListing;
 import com.aliyun.oss.model.ObjectMetadata;
 import com.aliyun.oss.model.PutObjectResult;
+import com.aliyun.oss.model.UploadPartRequest;
+import com.aliyun.oss.model.UploadPartResult;
 import okhttp3.Response;
-import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.aliyun.oss.blobstore.OssBlobContainer;
 import org.elasticsearch.aliyun.oss.service.exception.CreateStsOssClientException;
-import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.repository.oss.OssRepository;
 import org.elasticsearch.utils.DateHelper;
@@ -42,7 +48,7 @@ import static java.lang.Thread.sleep;
 public class OssStorageClient {
     private static final Logger logger = LogManager.getLogger(OssBlobContainer.class);
 
-    private RepositoryMetaData metadata;
+    private RepositoryMetadata metadata;
     private OSSClient client;
     private Date stsTokenExpiration;
     private String ECS_METADATA_SERVICE = "http://100.100.100.200/latest/meta-data/ram/security-credentials/";
@@ -56,9 +62,10 @@ public class OssStorageClient {
 
     private final String EXPIRATION = "Expiration";
 
-    public OssStorageClient(RepositoryMetaData metadata) throws CreateStsOssClientException {
+    public OssStorageClient(RepositoryMetadata metadata) throws CreateStsOssClientException {
         this.metadata = metadata;
-        if (StringUtils.isNotEmpty(OssClientSettings.ECS_RAM_ROLE.get(metadata.settings()).toString())) {
+        SecureString secureString = OssClientSettings.ECS_RAM_ROLE.get(metadata.settings());
+        if (secureString != null && !secureString.toString().isEmpty()) {
             isStsOssClient = true;
         } else {
             isStsOssClient = false;
@@ -73,7 +80,7 @@ public class OssStorageClient {
     }
 
     public DeleteObjectsResult deleteObjects(DeleteObjectsRequest deleteObjectsRequest)
-        throws OSSException, ClientException {
+            throws OSSException, ClientException {
         if (isStsOssClient) {
             readWriteLock.readLock().lock();
             try {
@@ -87,7 +94,7 @@ public class OssStorageClient {
     }
 
     public boolean doesObjectExist(String bucketName, String key)
-        throws OSSException, ClientException {
+            throws OSSException, ClientException {
         if (isStsOssClient) {
             readWriteLock.readLock().lock();
             try {
@@ -101,7 +108,7 @@ public class OssStorageClient {
     }
 
     public boolean doesBucketExist(String bucketName)
-        throws OSSException, ClientException {
+            throws OSSException, ClientException {
         if (isStsOssClient) {
             readWriteLock.readLock().lock();
             try {
@@ -115,7 +122,7 @@ public class OssStorageClient {
     }
 
     public ObjectListing listObjects(ListObjectsRequest listObjectsRequest)
-        throws OSSException, ClientException {
+            throws OSSException, ClientException {
         if (isStsOssClient) {
             readWriteLock.readLock().lock();
             try {
@@ -129,7 +136,7 @@ public class OssStorageClient {
     }
 
     public OSSObject getObject(String bucketName, String key)
-        throws OSSException, ClientException {
+            throws OSSException, ClientException {
         if (isStsOssClient) {
             readWriteLock.readLock().lock();
             try {
@@ -143,7 +150,7 @@ public class OssStorageClient {
     }
 
     public PutObjectResult putObject(String bucketName, String key, InputStream input,
-        ObjectMetadata metadata) throws OSSException, ClientException {
+                                     ObjectMetadata metadata) throws OSSException, ClientException {
         if (isStsOssClient) {
             readWriteLock.readLock().lock();
             try {
@@ -157,7 +164,7 @@ public class OssStorageClient {
     }
 
     public void deleteObject(String bucketName, String key)
-        throws OSSException, ClientException {
+            throws OSSException, ClientException {
         if (isStsOssClient) {
             readWriteLock.readLock().lock();
             try {
@@ -172,19 +179,19 @@ public class OssStorageClient {
     }
 
     public CopyObjectResult copyObject(String sourceBucketName, String sourceKey,
-        String destinationBucketName, String destinationKey) throws OSSException, ClientException {
+                                       String destinationBucketName, String destinationKey) throws OSSException, ClientException {
 
         if (isStsOssClient) {
             readWriteLock.readLock().lock();
             try {
                 return this.client
-                    .copyObject(sourceBucketName, sourceKey, destinationBucketName, destinationKey);
+                        .copyObject(sourceBucketName, sourceKey, destinationBucketName, destinationKey);
             } finally {
                 readWriteLock.readLock().unlock();
             }
         } else {
             return this.client
-                .copyObject(sourceBucketName, sourceKey, destinationBucketName, destinationKey);
+                    .copyObject(sourceBucketName, sourceKey, destinationBucketName, destinationKey);
         }
     }
 
@@ -195,7 +202,7 @@ public class OssStorageClient {
             if (retryCount > REFRESH_RETRY_COUNT) {
                 logger.error("Can't get valid token after retry {} times", REFRESH_RETRY_COUNT);
                 throw new CreateStsOssClientException(
-                    "Can't get valid token after retry " + REFRESH_RETRY_COUNT + " times");
+                        "Can't get valid token after retry " + REFRESH_RETRY_COUNT + " times");
             }
             this.client = createStsOssClient(this.metadata);
             try {
@@ -247,18 +254,18 @@ public class OssStorageClient {
         return in;
     }
 
-    private OSSClient createClient(RepositoryMetaData repositoryMetaData) throws CreateStsOssClientException {
+    private OSSClient createClient(RepositoryMetadata repositoryMetaData) throws CreateStsOssClientException {
         OSSClient client;
 
-        String ecsRamRole = OssClientSettings.ECS_RAM_ROLE.get(repositoryMetaData.settings()).toString();
-        String stsToken = OssClientSettings.SECURITY_TOKEN.get(repositoryMetaData.settings()).toString();
+        SecureString ecsRamRole = OssClientSettings.ECS_RAM_ROLE.get(repositoryMetaData.settings());
+        SecureString stsToken = OssClientSettings.SECURITY_TOKEN.get(repositoryMetaData.settings());
         /*
          * If ecsRamRole exist
          * means use ECS metadata service to get ststoken for auto snapshot.
          * */
-        if (StringUtils.isNotEmpty(ecsRamRole.toString())) {
+        if (ecsRamRole != null && !ecsRamRole.toString().isEmpty()) {
             client = createStsOssClient(repositoryMetaData);
-        } else if (StringUtils.isNotEmpty(stsToken)) {
+        } else if (stsToken != null && !stsToken.toString().isEmpty()) {
             //no used still now.
             client = createAKStsTokenClient(repositoryMetaData);
         } else {
@@ -267,35 +274,35 @@ public class OssStorageClient {
         return client;
     }
 
-    private ClientConfiguration extractClientConfiguration(RepositoryMetaData repositoryMetaData) {
+    private ClientConfiguration extractClientConfiguration(RepositoryMetadata repositoryMetaData) {
         ClientConfiguration configuration = new ClientConfiguration();
         configuration.setSupportCname(OssRepository.getSetting(OssClientSettings.SUPPORT_CNAME, repositoryMetaData));
         return configuration;
     }
 
-    private OSSClient createAKOssClient(RepositoryMetaData repositoryMetaData) {
+    private OSSClient createAKOssClient(RepositoryMetadata repositoryMetaData) {
         SecureString accessKeyId =
-            OssRepository.getSetting(OssClientSettings.ACCESS_KEY_ID, repositoryMetaData);
+                OssRepository.getSetting(OssClientSettings.ACCESS_KEY_ID, repositoryMetaData);
         SecureString secretAccessKey =
-            OssRepository.getSetting(OssClientSettings.SECRET_ACCESS_KEY, repositoryMetaData);
+                OssRepository.getSetting(OssClientSettings.SECRET_ACCESS_KEY, repositoryMetaData);
         String endpoint = OssRepository.getSetting(OssClientSettings.ENDPOINT, repositoryMetaData);
         return new OSSClient(endpoint, accessKeyId.toString(), secretAccessKey.toString(),
-            extractClientConfiguration(repositoryMetaData));
+                extractClientConfiguration(repositoryMetaData));
     }
 
-    private OSSClient createAKStsTokenClient(RepositoryMetaData repositoryMetaData) {
+    private OSSClient createAKStsTokenClient(RepositoryMetadata repositoryMetaData) {
         SecureString securityToken = OssClientSettings.SECURITY_TOKEN.get(repositoryMetaData.settings());
         SecureString accessKeyId =
-            OssRepository.getSetting(OssClientSettings.ACCESS_KEY_ID, repositoryMetaData);
+                OssRepository.getSetting(OssClientSettings.ACCESS_KEY_ID, repositoryMetaData);
         SecureString secretAccessKey =
-            OssRepository.getSetting(OssClientSettings.SECRET_ACCESS_KEY, repositoryMetaData);
+                OssRepository.getSetting(OssClientSettings.SECRET_ACCESS_KEY, repositoryMetaData);
         String endpoint = OssRepository.getSetting(OssClientSettings.ENDPOINT, repositoryMetaData);
         return new OSSClient(endpoint, accessKeyId.toString(), secretAccessKey.toString(),
-            securityToken.toString(), extractClientConfiguration(repositoryMetaData));
+                securityToken.toString(), extractClientConfiguration(repositoryMetaData));
     }
 
-    private synchronized OSSClient createStsOssClient(RepositoryMetaData repositoryMetaData)
-        throws CreateStsOssClientException {
+    private synchronized OSSClient createStsOssClient(RepositoryMetadata repositoryMetaData)
+            throws CreateStsOssClientException {
         if (isStsTokenExpired() || isTokenWillExpired()) {
             try {
                 if (null == repositoryMetaData) {
@@ -321,7 +328,7 @@ public class OssStorageClient {
                         this.client.shutdown();
                     }
                     this.client = new OSSClient(endpoint, accessKeyId, accessKeySecret, securityToken,
-                        extractClientConfiguration(repositoryMetaData));
+                            extractClientConfiguration(repositoryMetaData));
                 } finally {
                     readWriteLock.writeLock().unlock();
                 }
@@ -333,6 +340,62 @@ public class OssStorageClient {
             return this.client;
         } else {
             return this.client;
+        }
+    }
+
+    public InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest request) throws OSSException, ClientException {
+        if (isStsOssClient) {
+            readWriteLock.readLock().lock();
+            try {
+                return client.initiateMultipartUpload(request);
+
+            } finally {
+                readWriteLock.readLock().unlock();
+            }
+        } else {
+            return client.initiateMultipartUpload(request);
+        }
+    }
+
+    public UploadPartResult uploadPart(UploadPartRequest request) throws OSSException, ClientException {
+        if (isStsOssClient) {
+            readWriteLock.readLock().lock();
+            try {
+                return client.uploadPart(request);
+
+            } finally {
+                readWriteLock.readLock().unlock();
+            }
+        } else {
+            return client.uploadPart(request);
+        }
+    }
+
+    public void abortMultipartUpload(AbortMultipartUploadRequest request) throws OSSException, ClientException {
+        if (isStsOssClient) {
+            readWriteLock.readLock().lock();
+            try {
+                client.abortMultipartUpload(request);
+
+            } finally {
+                readWriteLock.readLock().unlock();
+            }
+        } else {
+            client.abortMultipartUpload(request);
+        }
+    }
+
+    public CompleteMultipartUploadResult completeMultipartUpload(CompleteMultipartUploadRequest request) throws OSSException, ClientException {
+        if (isStsOssClient) {
+            readWriteLock.readLock().lock();
+            try {
+                return client.completeMultipartUpload(request);
+
+            } finally {
+                readWriteLock.readLock().unlock();
+            }
+        } else {
+            return client.completeMultipartUpload(request);
         }
     }
 }

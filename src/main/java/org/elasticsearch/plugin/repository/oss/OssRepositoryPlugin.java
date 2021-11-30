@@ -15,10 +15,13 @@ import org.elasticsearch.aliyun.oss.service.OssClientSettings;
 import org.elasticsearch.aliyun.oss.service.OssService;
 import org.elasticsearch.aliyun.oss.service.OssServiceImpl;
 import org.elasticsearch.aliyun.oss.service.exception.CreateStsOssClientException;
-import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.metadata.RepositoryMetadata;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Setting;
+import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
+import org.elasticsearch.indices.recovery.RecoverySettings;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.RepositoryPlugin;
 import org.elasticsearch.repositories.Repository;
@@ -42,17 +45,17 @@ public class OssRepositoryPlugin extends Plugin implements RepositoryPlugin {
         });
     }
 
-    protected OssService createStorageService(RepositoryMetaData metadata)
+    protected OssService createStorageService(RepositoryMetadata metadata)
         throws CreateStsOssClientException {
         return new OssServiceImpl(metadata);
     }
 
+
     @Override
-    public Map<String, Repository.Factory> getRepositories(Environment env,
-        NamedXContentRegistry namedXContentRegistry) {
+    public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry, ClusterService clusterService, BigArrays bigArrays, RecoverySettings recoverySettings) {
         return Collections.singletonMap(OssRepository.TYPE,
-            (metadata) -> new OssRepository(metadata, env, namedXContentRegistry,
-                createStorageService(metadata)));
+                (metadata) -> new OssRepository(metadata, env, namedXContentRegistry,
+                        createStorageService(metadata),clusterService, bigArrays, recoverySettings));
     }
 
     @Override
